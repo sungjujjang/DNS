@@ -515,7 +515,7 @@ class Saeja(commands.Cog):
         name: str,
         run_weekday: int,
         run_time: str,
-        week: str = "next",
+        week: str = "this",
     ) -> None:
         discord_id = str(interaction.user.id)
         run_time = run_time.strip()
