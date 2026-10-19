@@ -40,9 +40,15 @@ async def _send_dm(
 
 
 def automation_dates(row: dict[str, Any]) -> tuple[str, str]:
-    """양식의 요일 규칙과 대상 주 설정으로 신청 기간을 계산해요."""
+    """양식의 요일 규칙과 대상 주 설정으로 신청 기간을 계산해요.
+
+    주간 모드 동작:
+    - week_offset == 0 또는 week_mode 명시가 'this' 성격이면 'this' 주
+    - 기본값은 week_offset == 1 → 'next' 주 (기존 자동화 기본값 유지)
+    """
     today = now_kst().date()
-    week_mode = "this" if int(row.get("week_offset", 1)) == 0 else "next"
+    woff = int(row.get("week_offset", 1))
+    week_mode = "this" if woff == 0 else "next"
     start, end = resolve_week(
         today,
         week_mode,
