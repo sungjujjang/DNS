@@ -35,11 +35,16 @@ def resolve_week(
     """신청 기간(시작일, 종료일)을 계산해요.
 
     week_mode: "auto" | "this" | "next"
+    - auto: 이번 주 범위 종료일(end_weekday)이 오늘보다 크거나 같으면 이번 주, 아니면 다음 주
     """
     offset = {"this": 0, "next": 1}.get(week_mode, -1)
     if offset < 0:
-        monday = monday_of(today, 0)
-        offset = 0 if monday + timedelta(days=start_weekday) >= today else 1
+        base_this = monday_of(today, 0)
+        end_this = base_this + timedelta(days=end_weekday)
+        if today <= end_this:
+            offset = 0
+        else:
+            offset = 1
     base = monday_of(today, offset)
     return base + timedelta(days=start_weekday), base + timedelta(days=end_weekday)
 
