@@ -39,12 +39,7 @@ def resolve_week(
     """
     offset = {"this": 0, "next": 1}.get(week_mode, -1)
     if offset < 0:
-        base_this = monday_of(today, 0)
-        end_this = base_this + timedelta(days=end_weekday)
-        if today <= end_this:
-            offset = 0
-        else:
-            offset = 1
+        offset = 0  # auto는 무조건 이번 주
     base = monday_of(today, offset)
     return base + timedelta(days=start_weekday), base + timedelta(days=end_weekday)
 

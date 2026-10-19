@@ -50,7 +50,7 @@ async def exercise(bot: DNSBot) -> None:
     assert cog.interaction_check is not None
 
     assert resolve_week(date(2026, 10, 19), "auto", 0, 3) == (date(2026, 10, 19), date(2026, 10, 22))
-    assert resolve_week(date(2026, 10, 25), "auto", 0, 3) == (date(2026, 10, 26), date(2026, 10, 29))
+    assert resolve_week(date(2026, 10, 25), "auto", 0, 3) == (date(2026, 10, 19), date(2026, 10, 22))
     assert resolve_week(date(2026, 10, 20), "this", 1, 3) == (date(2026, 10, 20), date(2026, 10, 22))
 
     next_week = automation_dates({"week_offset": 1, "start_weekday": 0, "end_weekday": 3})
