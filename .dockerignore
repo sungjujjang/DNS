@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.venv/
+.git/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+data/
+*.db
+*.db-*
