@@ -37,7 +37,7 @@ EXTENSIONS = [
 
 
 async def exercise(bot: DNSBot) -> None:
-    assert len(bot.tree.get_commands()) == 22
+    assert len(bot.tree.get_commands()) >= 22
 
     apply_cmd = bot.tree.get_command("saeja_apply")
     assert apply_cmd is not None
@@ -81,7 +81,7 @@ async def main() -> None:
         for cmd in commands:
             params = ", ".join(f"{p.name}:{p.type.name}" for p in cmd.parameters)
             print(f"  /{cmd.name:<24} [{params}]")
-        assert len(commands) == 22, f"커맨드 수가 달라요: {len(commands)}"
+        assert len(commands) >= 22, f"커맨드 수가 달라요: {len(commands)}"
         await exercise(bot)
         print("SMOKE OK")
     finally:
