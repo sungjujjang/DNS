@@ -38,8 +38,7 @@ def resolve_week(
     - auto: 이번 주 범위 종료일(end_weekday)이 오늘보다 크거나 같으면 이번 주, 아니면 다음 주
     """
     offset = {"this": 0, "next": 1}.get(week_mode, -1)
-    if offset < 0:
-        offset = 0  # auto는 무조건 이번 주
+    offset = max(offset, 0)  # auto는 무조건 이번 주
     base = monday_of(today, offset)
     return base + timedelta(days=start_weekday), base + timedelta(days=end_weekday)
 
