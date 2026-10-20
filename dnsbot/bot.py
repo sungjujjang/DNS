@@ -137,6 +137,10 @@ class DNSBot(commands.Bot):
 
         for extension in CogList:
             await self.load_extension(extension)
+        try:
+            await self.add_cog(PrefixBridge(self))
+        except Exception:
+            pass
 
         if self.settings.guild_id:
             guild = discord.Object(id=self.settings.guild_id)
@@ -164,7 +168,7 @@ class DNSBot(commands.Bot):
         if message.author.bot:
             return
         await self.process_commands(message)
-
+    
     async def close(self) -> None:
         for task in self._background_tasks:
             task.cancel()
@@ -175,3 +179,30 @@ class DNSBot(commands.Bot):
 
 def create_bot(settings: Settings) -> DNSBot:
     return DNSBot(settings)
+
+
+class PrefixBridge(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def _reply_slash(self, ctx, name):
+        await ctx.reply(f'슬래시 명령어를 사용해주세요: `/{name}`', mention_author=False)
+
+    @commands.command(name='help')
+    async def c_help(self, ctx): await self._reply_slash(ctx, 'help')
+    @commands.command(name='login')
+    async def c_login(self, ctx): await self._reply_slash(ctx, 'login')
+    @commands.command(name='로그인')
+    async def c_login2(self, ctx): await self._reply_slash(ctx, 'login')
+    @commands.command(name='logout')
+    async def c_logout(self, ctx): await self._reply_slash(ctx, 'logout')
+    @commands.command(name='profile')
+    async def c_profile(self, ctx): await self._reply_slash(ctx, 'profile')
+    @commands.command(name='내정보')
+    async def c_profile2(self, ctx): await self._reply_slash(ctx, 'profile')
+    @commands.command(name='meal')
+    async def c_meal(self, ctx): await self._reply_slash(ctx, 'meal')
+    @commands.command(name='급식')
+    async def c_meal2(self, ctx): await self._reply_slash(ctx, 'meal')
+    @commands.command(name='새자')
+    async def c_saeja(self, ctx): await self._reply_slash(ctx, '새자 신청')
