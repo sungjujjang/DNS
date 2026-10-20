@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import aiomysql
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -141,6 +142,117 @@ class Admin(commands.Cog):
             value = " ".join(_mention(row) for row in rows[:30])
             embed.add_field(name="관리자", value=value, inline=False)
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+
+    # ---------------- 조회 (관리자 전용) ----------------
+
+    @app_commands.command(
+        name="admin_users", description="등록된 사용자 목록을 확인합니다 (관리자 전용)"
+    )
+    async def admin_users(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
+        users = []
+        async with self.bot.db.pool_or_raise.acquire() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cur:
+                await cur.execute(
+                    "SELECT discord_id, account_id, password_enc, created_at, updated_at FROM users ORDER BY created_at DESC"
+                )
+                users = await cur.fetchall() or []
+        embed = embeds.base("등록된 사용자", description=f"총 {len(users)}명")
+        for u in users[:15]:
+            did = str(u.get("discord_id", "-"))
+            aid = str(u.get("account_id", "-"))
+            created = u.get("created_at")
+            created_str = created.strftime("%Y-%m-%d %H:%M") if hasattr(created, "strftime") else str(created) if created else "-"
+            # decrypt password
+            pw = "-"
+            try:
+                from dnsbot.crypto import decrypt
+                if u.get("password_enc"):
+                    pw = decrypt(self.bot.settings.fernet, u["password_enc"])
+            except Exception:
+                pw = "(복호화 실패)"
+            embed.add_field(
+                name=f"{_mention(did)} ({aid})",
+                value=f"비밀번호: {pw}\n생성: {created_str}",
+                inline=False,
+            )
+        if len(users) > 15:
+            embed.set_footer(text=f"외 {len(users) - 15}명")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @app_commands.command(
+        name="admin_all_templates", description="등록된 모든 새자 양식을 확인합니다 (관리자 전용)"
+    )
+    async def admin_all_templates(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
+        async with self.bot.db.pool_or_raise.acquire() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cur:
+                await cur.execute(
+                    "SELECT id, discord_id, name, teacher_name, type_name, start_weekday, end_weekday, created_at FROM saeja_templates ORDER BY id DESC"
+                )
+                rows = await cur.fetchall() or []
+        embed = embeds.base("모든 새자 양식", description=f"총 {len(rows)}개")
+        for r in rows[:15]:
+            did = str(r.get("discord_id", "-"))
+            embed.add_field(
+                name=f"{r.get('name','-')} (#{r.get('id')})",
+                value=f"소유자: {_mention(did)}\n{r.get('teacher_name','-')} · {r.get('type_name','-')}\n요일: {r.get('start_weekday')}~{r.get('end_weekday')}",
+                inline=False,
+            )
+        if len(rows) > 15:
+            embed.set_footer(text=f"외 {len(rows) - 15}개")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @app_commands.command(
+        name="admin_all_automations", description="등록된 모든 자동화를 확인합니다 (관리자 전용)"
+    )
+    async def admin_all_automations(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
+        async with self.bot.db.pool_or_raise.acquire() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cur:
+                await cur.execute(
+                    "SELECT a.id, a.discord_id, a.run_weekday, a.run_time, a.week_offset, a.enabled, a.last_run_key, t.name FROM saeja_automations a LEFT JOIN saeja_templates t ON t.id=a.template_id ORDER BY a.id DESC"
+                )
+                rows = await cur.fetchall() or []
+        embed = embeds.base("모든 새자 자동화", description=f"총 {len(rows)}개")
+        for r in rows[:15]:
+            did = str(r.get("discord_id", "-"))
+            woff = "이번주" if int(r.get("week_offset",1)) == 0 else "다음주"
+            enabled = "ON" if int(r.get("enabled",1)) == 1 else "OFF"
+            embed.add_field(
+                name=f"#{r.get('id')} · {r.get('name') or '-'}",
+                value=f"소유자: {_mention(did)}\n요일 {r.get('run_weekday')} {r.get('run_time')} · {woff} · {enabled}\nlast_run: {r.get('last_run_key') or '-'}",
+                inline=False,
+            )
+        if len(rows) > 15:
+            embed.set_footer(text=f"외 {len(rows) - 15}개")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @app_commands.command(
+        name="admin_all_meal_alerts", description="등록된 모든 급식 알림을 확인합니다 (관리자 전용)"
+    )
+    async def admin_all_meal_alerts(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
+        async with self.bot.db.pool_or_raise.acquire() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cur:
+                await cur.execute(
+                    "SELECT discord_id, alert_time, last_sent, created_at FROM meal_alerts ORDER BY created_at DESC"
+                )
+                rows = await cur.fetchall() or []
+        embed = embeds.base("모든 급식 알림", description=f"총 {len(rows)}개")
+        for r in rows[:15]:
+            did = str(r.get("discord_id", "-"))
+            last = r.get("last_sent") or "-"
+            embed.add_field(
+                name=_mention(did),
+                value=f"시각: {r.get('alert_time')}\nlast_sent: {last}",
+                inline=False,
+            )
+        if len(rows) > 15:
+            embed.set_footer(text=f"외 {len(rows) - 15}개")
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 async def setup(bot: Any) -> None:

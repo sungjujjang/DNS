@@ -43,8 +43,9 @@ class DNSCommandTree(app_commands.CommandTree):
 class DNSBot(commands.Bot):
     def __init__(self, settings: Settings) -> None:
         intents = discord.Intents.default()
+        intents.message_content = True
         super().__init__(
-            command_prefix=commands.when_mentioned,
+            command_prefix="!",
             help_command=None,
             description="DMS 디스코드 봇 DNS",
             intents=intents,
@@ -158,6 +159,11 @@ class DNSBot(commands.Bot):
             ),
             asyncio.create_task(tasks.meal_alert_loop(self), name="meal-alert"),
         ]
+
+    async def on_message(self, message: discord.Message) -> None:
+        if message.author.bot:
+            return
+        await self.process_commands(message)
 
     async def close(self) -> None:
         for task in self._background_tasks:
